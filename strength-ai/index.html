@@ -626,7 +626,7 @@ body.kp-open .rest{display:none}
 </div>
 
 <script>
-const HOST="pwa";const IMG=null;const APP_VERSION="0.1-ai";
+const HOST="pwa";const IMG=null;const APP_VERSION="0.2-ai";
 const ICON={
  today:'<svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
  guide:'<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>',
@@ -1958,15 +1958,15 @@ const MACHINES=[
   set:["Adjust the backrest so your knees can bend to about 90° without your hips lifting off the pad.","Place your feet hip-width apart in the middle of the platform.","Press the platform up slightly, then release the safety handles. Put them back on when you finish."],
   safe:["Never lock your knees straight at the top.","Keep your hips and lower back on the pad; stop lowering before your hips start to curl up."]},
  {id:"leg_curl",n:"Leg curl machine",aka:["Seated leg curl","Lying leg curl","Hamstring curl"],img:"leg_curl",ex:["lcurl"],
-  look:"Machine with a padded roller behind the lower legs; either you sit with a pad on top of your thighs, or you lie face down on a bench with the roller above your heels.",
+  look:"Three common versions. Seated: an upright seat with a padded bar locking down on top of the thighs and a padded roller behind the ankles that you push down and back. Lying (prone): a bench you lie face down on, often bent upward at the hips, with a roller pad above the heels and handles near the head. Standing: you stand at the machine and curl one leg back against a pad. Weight stack usually at the side. Key difference from the leg extension: in a leg curl the roller sits BEHIND or ABOVE the heels; in a leg extension it sits IN FRONT of the shins.",
   set:["Line your knee joint up with the machine's pivot point (often marked with a coloured dot).","Set the leg pad so it sits just above your heels, not on your calves.","On the seated version, lower the thigh pad until it holds your legs snugly. Hold the handles."],
   safe:["Return the pad slowly over 2–3 seconds; don't let the weight slam.","On the lying version, keep your hips pressed into the bench."]},
  {id:"leg_extension",n:"Leg extension machine",aka:["Quad extension"],img:"leg_extension",ex:["lext"],
-  look:"Upright seat with a padded roller in front of the shins, near the ankles, and a pivot arm beside the knees.",
+  look:"Upright seat with a backrest, a padded roller IN FRONT of the lower shins near the ankles, a lever arm pivoting beside the knees, and handles at the sides of the seat. No pad on top of the thighs (that would suggest a seated leg curl).",
   set:["Adjust the backrest so your knees line up with the machine's pivot point.","Set the roller pad on the front of your lower shins, just above your feet.","Hold the handles at your sides and start with a light weight."],
   safe:["Lift and lower smoothly; don't kick the weight up.","If your knees ache, use a lighter weight or a shorter range."]},
  {id:"seated_calf",n:"Seated calf raise machine",aka:["Seated calf machine"],img:"seated_calf_raise",ex:["secalf"],
-  look:"Low seat with a padded lever that rests on top of the thighs just above the knees, and a small foot plate or step for the balls of the feet.",
+  look:"Low seat with a padded lever that rests on top of the thighs just above the knees, a small raised foot plate for the balls of the feet, and usually plates loaded on a horn rather than a stack. The knees stay bent at about 90 degrees.",
   set:["Sit and put the balls of your feet on the edge of the foot plate.","Lower the knee pad until it sits snugly on your thighs just above your knees.","Raise your heels a little and release the safety lever. Put it back when you finish."],
   safe:["Lower slowly into the stretch; don't bounce at the bottom."]},
  {id:"standing_calf",n:"Standing calf raise",aka:["Standing calf machine","Calf raise step"],img:"standing_calf_raise",ex:["scalf"],
@@ -2073,12 +2073,13 @@ Reply with JSON only, no other text:
  "alternatives": ["<up to 2 other plausible ids>"],
  "seen": "<one short sentence describing what is in the photo>"}
 
-Rules: never invent an id that is not in the list. If the photo is unclear, too dark, or shows a person rather than equipment, set id to null and say why in "seen". Do not give exercise advice.`}
+Rules: never invent an id that is not in the list. If the photo shows gym equipment and one listed machine is the closest plausible match, choose it (with "low" confidence if unsure) rather than null, and put the next-closest in "alternatives". Look carefully at where the pads sit relative to the legs, the seat or bench position, and the angle. Use null only if no listed machine is plausible, or the photo is too unclear or doesn't show gym equipment, and say why in "seen". Do not give exercise advice.`}
 
 /* ---------- My Strength AI: scan, learn, add ---------- */
 let SAMPLE=null;
 (async()=>{if(HOST!=="claude"||!window.claude||!claude.use)return;try{const s=await claude.use("sample");if(s){let ok=true;try{const l=await s.limits();ok=!!(l&&l.images)}catch(e){}SAMPLE=ok?s:null}}catch(e){SAMPLE=null}if(/scan|settings/.test(route()))render()})();
-const relayUrl=()=>(prefGet("relay")||"").trim();
+const DEFAULT_RELAY="https://my-strength-ai.umarabubs.workers.dev";
+const relayUrl=()=>{const p=prefGet("relay");if(p==null)return DEFAULT_RELAY;if(p==="off")return "";return String(p).trim()};
 function aiMode(){if(HOST==="claude")return SAMPLE?"claude":"manual";return relayUrl()?"relay":"manual"}
 function deviceId(){let d=prefGet("device");if(!d){d=Math.random().toString(36).slice(2)+Date.now().toString(36);prefSet("device",d)}return d}
 function aiRecent(){try{return JSON.parse(prefGet("recent")||"[]").filter(x=>MBY_M[x.id])}catch(e){return []}}
@@ -2161,7 +2162,7 @@ function extraCards(d,w,wk){const ids=(d.extra||[]).filter(id=>EXBY[id]&&!w.ex.s
 /* settings group */
 function aiSettingsGroup(){const m=aiMode();
   if(HOST==="claude")return `<div class="group"><h2>Machine recognition</h2><div class="srow"><div><b>${m==="claude"?"Claude identifies your photos":"Not available in this view"}</b><span class="muted small">${m==="claude"?"Each scan sends the photo to Claude and uses a little of your Claude usage. Photos aren't stored.":"Open this page in Claude to identify machines automatically. You can still choose machines from the list."}</span></div></div></div>`;
-  return `<div class="group"><h2>Machine recognition</h2><div class="srow col"><div><b>Recognition service address</b><span class="muted small">Paste the address of your Cloudflare Worker (see the README). Leave empty to choose machines from a list instead.</span></div>
+  return `<div class="group"><h2>Machine recognition</h2><div class="srow col"><div><b>Recognition service address</b><span class="muted small">Already set up. Clear the box and tap Save to turn automatic recognition off and choose machines from a list instead.</span></div>
    <div class="row"><input id="ai-relay" class="tin" type="url" inputmode="url" autocomplete="off" placeholder="https://my-strength-ai.yourname.workers.dev" value="${esc(relayUrl())}" aria-label="Recognition service address"><button class="btn" data-act="ai-relay-save">Save</button></div>
    <span class="small ${m==="relay"?"okline":"muted"}">${m==="relay"?"✓ Automatic recognition is on.":"Automatic recognition is off."}</span></div></div>`}
 function importTracker(){let raw=null;try{raw=localStorage.getItem("strengthlog.v1")}catch(e){}
@@ -2182,7 +2183,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("[data-act]");i
     d.extra=d.extra||[];if(!d.extra.includes(id))d.extra.push(id);ensureDraft();saveDraft();render();toast(`Added ${EXBY[id].n} to ${w.name}`,{label:"Open Today",fn:()=>{location.hash="#today";afterPaint(()=>{const c=$("ex-"+id);if(c){c.scrollIntoView({block:"center"});replay(c,"glow")}})}})}
   else if(a==="ai-rm"){const id=b.dataset.ex;const d=ensureDraft();d.extra=(d.extra||[]).filter(x=>x!==id);delete d.entries[id];saveDraft();render();toast(`Removed ${EXBY[id].n} from today`)}
   else if(a==="ai-cardio"){location.hash="#today";afterPaint(()=>{const c=$("cardio");if(c){c.scrollIntoView({block:"center"});replay(c,"glow")}})}
-  else if(a==="ai-relay-save"){const v=($("ai-relay").value||"").trim();if(v&&!/^https:\/\/[^\s]+$/.test(v)){toast("The address should start with https://");return}prefSet("relay",v);render();toast(v?"Recognition service saved":"Automatic recognition turned off")}
+  else if(a==="ai-relay-save"){const v=($("ai-relay").value||"").trim();if(v&&!/^https:\/\/[^\s]+$/.test(v)){toast("The address should start with https://");return}prefSet("relay",v||"off");render();toast(v?"Recognition service saved":"Automatic recognition turned off")}
   else if(a==="ai-import"){importTracker()}
 });
 

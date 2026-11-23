@@ -1,6 +1,6 @@
 // My Strength AI service worker: keeps the app working offline.
 // It only touches its own caches (names starting "strength-ai-"), so it never clears Strength Log's.
-const VERSION="strength-ai-v0-1";
+const VERSION="strength-ai-v0-2";
 const PRECACHE=[
  "./",
  "index.html",
